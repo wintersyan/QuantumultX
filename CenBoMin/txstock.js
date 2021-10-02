@@ -61,6 +61,10 @@ const COOKIE = $.isNode() ? require("./txstockCOOKIE") : ``;
 
 const logs = 0; //0为关闭日志，1为开启,默认为0
 const notifyInterval = 1; //0为关闭通知，1为所有通知,默认为0
+const taskIDList = new Array();
+const tgmarkcode = "/submitactivitycodes txstock@";
+const githubkeyUrl =
+  "https://raw.githubusercontent.com/CenBoMin/TGBOTCode/main/txstock.js";
 
 let rndtime = Math.round(new Date().getTime()) //毫秒
 let signday = formatDateTime(new Date());
