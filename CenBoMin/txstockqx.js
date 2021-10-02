@@ -1,3 +1,4 @@
+
 /*
 ╭┉┉╮╭╮╭╮╭┉┉╮╭┉┉╮╭┉┉╮╭┉┉╮╭╮╭╮
 ╰╮╭╯┋╰╯┋┋╭┉╯╰╮╭╯┋╭╮┋┋╭┉╯┋╰╯┋
@@ -35,7 +36,7 @@ userkey：点击左上头像-进入即获取
 
 提现cookie(cashheader):禁用获取cookie重写,重新打开app,点击左上头像-进入,等待我的福利下面活动加载成功,启用获取cookie重写,然后再点击第一个猜涨跌活动的页面就能够获取到了。。。
 
-签到cookie(signheader)：禁用获取cookie重写,重新打开app,点击左上头像-进入,等待右上角的金币数加载成功（进入提现页面）,启用获取cookie重写,点击进入提现的页面,会卡住加载几秒...过一会就能够获取到了
+签到cookie(signheader)：禁用获取cookie重写,重新打开app,点击左上头像-进入,等待我的福利下面活动加载成功,启用获取cookie重写,然后再点击第一个猜涨跌活动的页面就能够获取到了。。。
 
 signkey：禁用获取cookie重写,重新打开app,点击左上头像-进入,等待我的福利下面活动加载成功,启用获取cookie重写,然后再点击第一个猜涨跌活动的页面就能够获取到了。。。
 **** 微信小程序 ****
@@ -59,8 +60,7 @@ const logs = 0; //0为关闭日志，1为开启,默认为0
 const notifyInterval = 1; //0为关闭通知，1为所有通知,默认为0
 
 let rndtime = Math.round(new Date().getTime()) //毫秒
-let signday = formatDateTime(new Date());
-
+let signday = new Date().toLocaleString('zu-ZA').slice(0,10).replace(/-/g,'');
 let tz = '';
 let cash = $.getval('cash') || 0; //0为不自动提现,1为自动提现1元,5为自动提现1元
 
@@ -178,12 +178,12 @@ if ($.isNode()) {
   taskheaderVal = taskheaderArr[0];
   taskkeyVal = taskkeyArr[0];
   wxtaskkeyVal = wxtaskkeyArr[0];
-  if((hour == 15 && minute >= 15) || (hour == 16) || (hour == 17) || (hour == 18) || (hour == 19) || (hour == 20) || (hour == 21) || (hour == 22) || (hour == 23)){
+  //if((hour == 15 && minute >= 15) || (hour == 16) || (hour == 17) || (hour == 18) || (hour == 19) || (hour == 20) || (hour == 21) || (hour == 22) || (hour == 23)){
     await txstock();
-  }else{
-    $.log(`💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行`);
-    tz += `💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行\n`
-  }
+  //}else{
+   // $.log(`💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行`);
+    //tz += `💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行\n`
+ // }
   await showmsg();
 
 })()
