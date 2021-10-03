@@ -1,4 +1,4 @@
-const jsname='腾讯自选股'
+const jsname='腾旭自选股'
 const $ = Env(jsname)
 //cow活动
 if($request&&$request.url.indexOf("raisebull")>=0) {
