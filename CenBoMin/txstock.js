@@ -1,2538 +1,2158 @@
 /*
-╭┉┉╮╭╮╭╮╭┉┉╮╭┉┉╮╭┉┉╮╭┉┉╮╭╮╭╮
-╰╮╭╯┋╰╯┋┋╭┉╯╰╮╭╯┋╭╮┋┋╭┉╯┋╰╯┋
- ┋┋ ╰╮╭╯┋╰┉╮ ┋┋ ┋┋┋┋┋┋  ┋ ╭╯
- ┋┋ ╭╯╰╮╰┉╮┋ ┋┋ ┋┋┋┋┋┋  ┋ ╰╮
- ┋┋ ┋╭╮┋╭┉╯┋ ┋┋ ┋╰╯┋┋╰┉╮┋╭╮┋
- ╰╯ ╰╯╰╯╰┉┉╯ ╰╯ ╰┉┉╯╰┉┉╯╰╯╰╯
+腾讯自选股APP & 微信微证券公众号
+改自@CenBoMin大佬的脚本
+只适配了IOS，测试了青龙和V2P，其他平台请自行测试，安卓请自行测试
+多用户用#隔开
 
-//!!!:
-【BOXJS】：https://raw.githubusercontent.com/CenBoMin/GithubSync/main/cenbomin.box.json
+脚本只会在10点到13点之间进行猜涨跌，请务必在这段时间内跑一次脚本，猜涨跌开奖时间为15:15
+有些任务会提示任务完成发奖失败 -- 可以忽略
+或者任务完成前置条件不符合 -- 一般为需要分享，会在完成日常任务后尝试做互助
 
-#运行脚本前请先下载app,登录。。。手动完成成长任务,有钱
-#8.8打卡任务也手动做,建议只打卡4个成功即可,第5个基本拿不到
-#微信小程序-腾讯自选股和app的日常任务是分开的,毛比较少,手动做吧！
-#复制以下链接,贴到到微信点击,帮我助力
-https://zqact01.tenpay.com/activity/page/200814appInvite/#/new?stat_data=Ovy34p00pn019&invite_code=i02Fvx18dc&nick_name=%E9%99%88%E6%9F%8F%E9%8A%98&head_url=https%3A%2F%2Fthirdwx.qlogo.cn%2Fmmopen%2Fvi_32%2FQ0j4TwGTfTLWqFtqq3JGenAvqEnZhiazoeCicjicAZhEiaCib1LqSCHtC8sPLbG52YiajLZh8VRkY8bWu0uu24AKjgfA%2F132
+内置了多用户相互做分享任务，用户数多于一个才能用
+测试了做分享任务的情况下，一天收益大概在15000金币
+默认自动提现5元，做分享任务，不做新手任务
+新手任务可能需要跑几次才能做完，不过每天跑的话总会做完的
 
+提现条件设置：自己新建一个TxStockCash环境变量，0代表不提现，1代表提现1元，5代表提现5元
+新手任务设置：新建一个TxStockNewbie环境变量，0代表不做新手任务，1代表做新手任务
+分享任务设置：新建一个TxStockHelp环境变量，0代表不做分享互助，1代表做分享互助
+互助顺序设置：新建一个TxStockHelpOrder环境变量，按顺序填入要帮助的用户，0代表不帮助其他用户，每个用户之间用@或者#隔开
 
-特别感谢烧烤哥,loon用户可以用这个专门的conf：
-https://raw.githubusercontent.com/CenBoMin/GithubSync/main/TXSTOCK/txsloon_cookie.conf
+青龙：
+APP和微信都捉 https://wzq.tenpay.com/cgi-bin/activity_task_daily.fcgi? 开头的包，点击获取金币，看到任务应该就能捉到
+APP捉包把整个URL放进去TxStockAppUrl，header转成JSON字符串之后放进去TxStockAppHeader
+微信微证券公众号捉包后header转成JSON字符串之后放进去TxStockWxHeader
+export TxStockAppUrl='https://wzq.ten....#https://wzq.ten....#https://wzq.ten....'
+export TxStockAppHeader='{"Host":"...","Accept":"...",...}#{"Host":"...","Accept":"...",...}#{"Host":"...","Accept":"...",...}'
+export TxStockWxHeader='{"Host":"...","Accept":"...",...}#{"Host":"...","Accept":"...",...}#{"Host":"...","Accept":"...",...}'
 
-**** 定时任务 ****
-16 30 * * * https://raw.githubusercontent.com/CenBoMin/GithubSync/main/TXSTOCK/txstockqx.js
-**** 食用方法 ****
-到[重写]-[引用],加入重写引用,根据以下提示获取cookie
-**** 重写引用 ****
-IOS APP：https://raw.githubusercontent.com/CenBoMin/GithubSync/main/TXSTOCK/txs_cookie.conf
-微信小程序：https://raw.githubusercontent.com/CenBoMin/GithubSync/main/TXSTOCK/txs_wxcookie.conf
-**** IOS APP ****
-taskheader：打开app-立即获取
-taskkey：点击左上头像-我的福利-点击获取
+重写食用
+TxStockAppUrl与TxStockAppHeader：打开APP，点击头像->右上角金币->获取金币
+TxStockWxHeader：打开 腾讯自选股微信版|微证券 公众号，右下角好福利->福利中心
 
-userheader：点击左上头像-进入即获取
-userkey：点击左上头像-进入即获取
+V2P：
+重写: https://wzq.tenpay.com/cgi-bin/activity_task_daily.fcgi?   https://raw.githubusercontent.com/leafxcy/JavaScript/main/txstock.js
+MITM: wzq.tenpay.com
 
-提现cookie(cashheader):禁用获取cookie重写,重新打开app,点击左上头像-进入,等待我的福利下面活动加载成功,启用获取cookie重写,然后再点击第一个猜涨跌活动的页面就能够获取到了。。。
-
-签到cookie(signheader)：禁用获取cookie重写,重新打开app,点击左上头像-进入,等待右上角的金币数加载成功（进入提现页面）,启用获取cookie重写,点击进入提现的页面,会卡住加载几秒...过一会就能够获取到了
-
-signkey：禁用获取cookie重写,重新打开app,点击左上头像-进入,等待我的福利下面活动加载成功,启用获取cookie重写,然后再点击第一个猜涨跌活动的页面就能够获取到了。。。
-**** 微信小程序 ****
-！！！！！微信和app重写有冲突,不能两个同时开
-！！！！！必须先关闭app重写,在加入微信小程序重写https://raw.githubusercontent.com/CenBoMin/GithubSync/main/TXSTOCK/txs_wxcookie.conf,启用之后就可以去微信小程序做任务获取cookie
-
-微信任务cookie(wxtaskkey):进入微信小程序,点击资讯页面或者股票页面获取
-
-！！！！！获取完cookie,务必关闭重写引用
-#脚本一天尽量运行1-3次,本脚本虽然加了防呆机制,但是还是尽量避免运行多次哦...
-#且用且珍惜,更新无限期。
-
-// 手动做部分:
-# 模拟炒股周赛奖励：星期天登录模拟炒股(微信/app)
-# 周一抢牛活动：周一登录抢牛活动页面（app）
+圈X：
+[task_local]
+#腾讯自选股
+16 12,15 * * * txstock.js, tag=腾讯自选股, enabled=true
+[rewrite_local]
+#获取APP和微信微证券的URL和header
+https://wzq.tenpay.com/cgi-bin/activity_task_daily.fcgi? url script-request-header https://raw.githubusercontent.com/leafxcy/JavaScript/main/txstock.js
+[MITM]
+hostname = wzq.tenpay.com
 
 */
-const jsname = '📈腾讯自选股'
+
+const jsname = '腾讯自选股'
 const $ = Env(jsname)
+const notifyFlag = 1; //0为关闭通知，1为打开通知,默认为1
 
-const notify = $.isNode() ?require('./sendNotify') : '';
-const COOKIE = $.isNode() ? require("./txstockCOOKIE") : ``;
+const notify = $.isNode() ? require('./sendNotify') : '';
 
-const logs = 0; //0为关闭日志，1为开启,默认为0
-const notifyInterval = 1; //0为关闭通知，1为所有通知,默认为0
-const taskIDList = new Array();
-const tgmarkcode = "/submitactivitycodes txstock@";
-const githubkeyUrl =
-  "https://raw.githubusercontent.com/CenBoMin/TGBOTCode/main/txstock.js";
+let sessionTime = Math.round(new Date().getTime())
+let rndtime = "" //毫秒
+let todayDate = formatDateTime(new Date());
 
-let rndtime = Math.round(new Date().getTime()) //毫秒
-let signday = formatDateTime(new Date());
+var cash = ($.isNode() ? (process.env.TxStockCash) : ($.getval('TxStockCash'))) || 5; //0为不自动提现,1为自动提现1元,5为自动提现5元
+var help = ($.isNode() ? (process.env.TxStockHelp) : ($.getval('TxStockHelp'))) || 1; //0为不做分享助力任务，1为多用户互相分享助力
+var newbie = ($.isNode() ? (process.env.TxStockNewbie) : ($.getval('TxStockNewbie'))) || 0; //0为不做新手任务，1为自动做新手任务
+var helpOrder = ($.isNode() ? (process.env.TxStockHelpOrder) : ($.getval('TxStockHelpOrder'))) || "";
 
-let tz = '';
-let cash = $.getval('cash') || 5; //0为不自动提现,1为自动提现1元,5为自动提现1元
+const appUrlArr = [];
+let appUrlArrVal = "";
 
-//time
-var hour='';
-var minute='';
-if ($.isNode()) {
-   hour = new Date( new Date().getTime() + 8 * 60 * 60 * 1000 ).getHours();
-   minute = new Date( new Date().getTime() + 8 * 60 * 60 * 1000 ).getMinutes();
-}else{
-   hour = (new Date()).getHours();
-   minute = (new Date()).getMinutes();
+const appHeaderArr = [];
+let appHeaderArrVal = "";
+
+const wxHeaderArr = [];
+let wxHeaderArrVal = "";
+
+let rewardCoin = 0
+let coinStart = []
+let coinEnd = []
+let coinInfo = ""
+let notifyStr = ""
+
+let numUser = 0
+let totalUser = 0
+let shareFlag = 0 //用户数多于1且打开助力开关，才会做助力任务
+let helpUser = 0
+let scanList = []
+let nickname = []
+let bullStatusFlag = 0
+
+let appShareFlag = 1
+let wxShareFlag = 1
+let appTaskFlag = 1
+let wxTaskFlag = 1
+let bullishFlag = 1
+let bullHelpFlag = 0
+
+//多用户情况下，可以控制每个用户帮助第几个用户，默认帮助上一个
+let helpOrderArr = []
+
+let logDebug = 0
+let TEST_PRINT = 0
+
+let userAppShareTaskList = {
+    "daily": ["news_share", "task_50_1111", "task_51_1111"/*, "task_72_1113", "task_74_1113"*/, ],
+    "newbie": [],
+    
+}
+let userAppShareCodeArr = {
+    "daily": {},
+    "newbie": {},
+    "bull_invite": [],
+    "bull_help": [],
+    "guess_invite": [],
+    "guess_ticket": [],
+    "guess_time": [],
 }
 
-let userheaderArr = [];
-let userheaderVal = "";
-let USERHEADER = [];
-
-let userkeyArr = [];
-let userkeyVal = "";
-let USERKEY = [];
-
-let cashheaderArr = [];
-let cashheaderVal = "";
-let CASHHEADER = [];
-
-let signheaderArr = [];
-let signheaderVal = "";
-let SINGHEADER = [];
-
-let signkeyArr = [];
-let signkeyVal = "";
-let SINGKEY = [];
-
-let taskheaderArr = [];
-let taskheaderVal = "";
-let TASKHEADER = [];
-
-let taskkeyArr = [];
-let taskkeyVal = "";
-let TASKKEY = [];
-
-let wxtaskkeyArr = [];
-let wxtaskkeyVal = "";
-let WXTASKKEY = [];
-
-////////////////////////////////////////////////////////////////////
-
-
-if ($.isNode()) {
- 
-  if (process.env.USERHEADER && process.env.USERHEADER.indexOf('\n') > -1) {
-   userheaderVal = process.env.USERHEADER.split('\n');
-   console.log(`USERHEADER您选择的是用换行隔开\n`)
-  }
-  else {
-  userheaderVal = [process.env.USERHEADER]
-  };
-  if (process.env.USERKEY && process.env.USERKEY.indexOf('\n') > -1) {
-   userkeyVal = process.env.USERKEY.split('\n');
-   console.log(`USERKEY您选择的是用换行隔开\n`)
-  } else {
-   userkeyVal = [process.env.USERKEY]
-  };
-  if (process.env.CASHHEADER && process.env.CASHHEADER.indexOf('\n') > -1) {
-   cashheaderVal = process.env.CASHHEADER.split('\n');
-   console.log(`CASHHEADER您选择的是用换行隔开\n`)
-  }
-  else {
-  cashheaderVal = [process.env.CASHHEADER]
-  };
-  if (process.env.SIGNHEADER && process.env.SIGNHEADER.indexOf('\n') > -1) {
-   signheaderVal = process.env.SIGNHEADER.split('\n');
-   console.log(`SIGNHEADER您选择的是用换行隔开\n`)
-  } else {
-   signheaderVal = [process.env.SIGNHEADER]
-  };
-   if (process.env.SIGNKEY && process.env.SIGNKEY.indexOf('\n') > -1) {
-   signkeyVal = process.env.SIGNKEY.split('\n');
-   console.log(`SIGNKEY您选择的是用换行隔开\n`)
-  }
-  else {
-  signkeyVal = [process.env.SIGNKEY]
-  };
-  if (process.env.TASKHEADER && process.env.TASKHEADER.indexOf('\n') > -1) {
-   taskheaderVal = process.env.TASKHEADER.split('\n');
-   console.log(`TASKHEADER您选择的是用换行隔开\n`)
-  } else {
-   taskheaderVal = [process.env.TASKHEADER]
-  };
-  if (process.env.TASKKEY && process.env.TASKKEY.indexOf('\n') > -1) {
-   taskkeyVal = process.env.TASKKEY.split('\n');
-   console.log(`TASKKEY您选择的是用换行隔开\n`)
-  }
-  else {
-  taskkeyVal = [process.env.TASKKEY]
-  };
-  if (process.env.WXTASKKEY && process.env.WXTASKKEY.indexOf('\n') > -1) {
-   wxtaskkeyVal = process.env.WXTASKKEY.split('\n');
-   console.log(`WXTASKKEY您选择的是用换行隔开\n`)
-  } else {
-   wxtaskkeyVal = [process.env.WXTASKKEY]
-  };
-  Object.keys(userheaderVal).forEach((item) => {
-    if (userheaderVal[item]) {
-      userheaderArr.push(cashheaderVal[item])
-    }
-  });
-  Object.keys(userkeyVal).forEach((item) => {
-    if (userkeyVal[item]) {
-      userkeyArr.push(userkeyVal[item])
-    }
-  });
-  Object.keys(cashheaderVal).forEach((item) => {
-    if (cashheaderVal[item]) {
-      cashheaderArr.push(cashheaderVal[item])
-    }
-  });
-  Object.keys(signheaderVal).forEach((item) => {
-    if (signheaderVal[item]) {
-      signheaderArr.push(signheaderVal[item])
-    }
-  });
-  Object.keys(signkeyVal).forEach((item) => {
-    if (signkeyVal[item]) {
-      signkeyArr.push(signkeyVal[item])
-    }
-  });
-  Object.keys(taskheaderVal).forEach((item) => {
-    if (taskheaderVal[item]) {
-      taskheaderArr.push(taskheaderVal[item])
-    }
-  });
-  Object.keys(taskkeyVal).forEach((item) => {
-    if (taskkeyVal[item]) {
-      taskkeyArr.push(taskkeyVal[item])
-    }
-  });
-  Object.keys(wxtaskkeyVal).forEach((item) => {
-    if (wxtaskkeyVal[item]) {
-      wxtaskkeyArr.push(wxtaskkeyVal[item])
-    }
-  });
-
- //自定义部分
-
-if (COOKIE.userheaderVal) {
-  
-    userheaderArr = COOKIE.userheaderVal.split('\n');
-    userkeyArr = COOKIE.userkeyVal.split('\n');
-    cashheaderArr = COOKIE.cashheaderVal.split('\n');
-    signheaderArr = COOKIE.signheaderVal.split('\n');
-    signkeyArr = COOKIE.signkeyVal.split('\n');
-    taskheaderArr = COOKIE.taskheaderVal.split('\n');
-    taskkeyArr = COOKIE.taskkeyVal.split('\n');
-    wxtaskkeyArr = COOKIE.wxtaskkeyVal.split('\n');
-
+let userWxShareTaskList = {
+    "daily": ["task_50_1100", "task_51_1100", "task_66_1110", "task_50_1110", "task_51_1110", "task_51_1112", "task_51_1113", ],
+    "newbie": ["task_50_1032", "task_51_1032"],
+}
+let userWxShareCodeArr = {
+    "daily": {},
+    "newbie": {},
 }
 
-//自定义部分结束
-
-} else {
-  userheaderArr.push($.getdata('userheader'));
-  userkeyArr.push($.getdata('userkey'));
-  cashheaderArr.push($.getdata('cashheader'));
-  signheaderArr.push($.getdata('signheader'));
-  signkeyArr.push($.getdata('signkey'));
-  taskheaderArr.push($.getdata('taskheader'));
-  taskkeyArr.push($.getdata('taskkey'));
-  wxtaskkeyArr.push($.getdata('wxtaskkey'));
+//APP任务
+let appActidArray = {
+    "daily": [1101, 1103, 1104, 1105, 1109, 1111, 1112, 1113],
+    "newbie": [1023, 1033, ],
+}
+let appTaskArray = {
+    "daily": [],
+    "newbie": [],
 }
 
+//微信小程序任务
+let wxActidArray = {
+    "daily": [1100, 1110, ],
+    "newbie": [1032, ],
+}
+let wxTaskArray = {
+    "daily": [],
+    "newbie": [],
+}
+
+//APP长牛任务
+let bullTaskArray = { 
+    "rock_bullish":{"taskName":"戳牛任务", "action":"rock_bullish", "actid":1105}, 
+    "open_box":{"taskName":"开宝箱", "action":"open_box", "actid":1105}, 
+    "open_blindbox":{"taskName":"开盲盒", "action":"open_blindbox", "actid":1105}, 
+    "query_blindbox":{"taskName":"查询皮肤数量", "action":"query_blindbox", "actid":1105},
+    "sell_skin":{"taskName":"卖皮肤", "action":"sell_skin", "actid":1105},
+    "feed":{"taskName":"喂长牛", "action":"feed", "actid":1105},
+}
+
+var TxStockAppUrl
+var TxStockAppHeader
+var TxStockWxHeader
 
 ///////////////////////////////////////////////////////////////////
 
 !(async () => {
+
+    if(typeof $request !== "undefined")
+    {
+        await getRewrite()
+    }
+    else
+    {
+        //检查环境变量
+        if(!(await checkEnv())){
+            return
+        }
+        
+        //初始化任务列表
+        await initTaskList()
+        
+        //获取用户信息
+        await initAccountInfo()
+        
+        //新手任务
+        await newbieTask()
+        
+        for (numUser = 0; numUser < totalUser; numUser++)
+        {
+            await getEnvParam(numUser)
+            
+            $.log(`\n======= 开始腾讯自选股用户${numUser+1} ${nickname[numUser]} 日常任务 =======\n`)
+            
+            //await testFunction() //测试用，勿打开
+            
+            await signStatus(2002,0); //签到
+            await $.wait(1000)
+            
+            await appGuessStatus(); //猜涨跌和获取互助码
+            await $.wait(1000)
+            
+            await dailyTask() //日常任务
+            await $.wait(1000)
+            
+            await queryShareCode() //获取日常任务互助码
+            await $.wait(1000)
+            
+            await bullTask() //长牛任务和获取互助码
+            await $.wait(1000)
+            
+            $.log(`\n======= 结束腾讯自选股用户${numUser+1} ${nickname[numUser]} 日常任务 =======\n`)
+        }
+        
+        await shareTask() //助力任务
+        
+        await todayIncome()//收益查询，提现
+        
+        await showmsg()
+    }
   
-  if (!taskheaderArr[0]) {
-    console.log($.name, '【提示】请先前往获取任务cookie')
-    return;
-  }
-  /*
-  userheaderVal = userheaderArr[0];
-  userkeyVal = userkeyArr[0];
-  cashheaderVal = cashheaderArr[0];
-  signheaderVal = signheaderArr[0];
-  signkeyVal = signkeyArr[0];
-  taskheaderVal = taskheaderArr[0];
-  taskkeyVal = taskkeyArr[0];
-  wxtaskkeyVal = wxtaskkeyArr[0];
-  */
-  if((hour == 15 && minute >= 15) || (hour == 16) || (hour == 17) || (hour == 18) || (hour == 19) || (hour == 20) || (hour == 21) || (hour == 22) || (hour == 23)){
-  console.log(`------------- 共${taskheaderArr.length}个账号----------------\n`)
-  for (let i = 0; i < 1; i++) {
-     userheaderVal = userheaderArr[i];
-  userkeyVal = userkeyArr[i];
-  cashheaderVal = cashheaderArr[i];
-  signheaderVal = signheaderArr[i];
-  signkeyVal = signkeyArr[i];
-  taskheaderVal = taskheaderArr[i];
-  taskkeyVal = taskkeyArr[i];
-  wxtaskkeyVal = wxtaskkeyArr[i];
-   $.index = i + 1;
-   console.log(`\n开始【📈腾讯自选股${$.index}】`)
-   
-  await Jsname()
-  O = (`${jsname}${$.index}执行通知🔔`);
- 
-    await txstock();
- 
-  await showmsg();
-  }
-  }else{
-    $.log(`💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行`);
-    tz += `💖请将定时时间设置到"下午3点15分"之后,\n脚本才会执行\n`
-  }
 
 })()
 .catch((e) => $.logErr(e))
-  .finally(() => $.done())
+.finally(() => $.done())
+
+//测试用
+async function testFunction() {
+    //扫描可查询的任务列表,
+    await scanAppTaskList(1000,2000,"task_daily","routine")
+    //await scanWxTaskList(1000,1400,"task_daily","routine") //每个大概花费86ms
+}
 
 //通知
-function showmsg() {
-  if (notifyInterval != 1) {
-    console.log(O + '\n' + tz);
-  }
+async function showmsg() {
+    
+    notifyBody = jsname + "运行通知\n\n" + notifyStr
+    
+    if (notifyFlag != 1) {
+        console.log(notifyBody);
+    }
 
-  if (notifyInterval == 1) {
-    $.msg(O, '\n', tz);
-    if ($.isNode() && (hour == 16)) {
-       notify.sendNotify($.name,tz)
-     }
-  }
-}
-
-async function txstock(){
-  console.log(`\n✅ 查询目前账户金币\n`)
-  await userhome(); //金币查询
-  console.log(`\n✅ 执行【签到】任务\n`)
-  await signtask();
-
-  console.log(`\n✅ 执行【App】日常任务\n`)
-  await task1();
-  await task2();
-  await task3();
-  await task4();
-  await task5();
-  await task6();
-  await task7();
-  await task8();
-  await task9();
-  console.log(`\n✅ 执行【微信小程序】日常任务\n`)
-  await wxtask1();
-  await wxtask2();
-  await wxtask3();
-  await wxtask4();
-  await wxtask5();
-  await wxtask6();
-  await wxtask7();
-  await wxtask8();
-  await wxtask9();
-  await wxtask10();
-  await wxtask11();
-  console.log(`\n✅ 执行【自动提现】任务\n`)
-  await cashorder(cash, money);
+    if (notifyFlag == 1) {
+        $.msg(notifyBody);
+        if ($.isNode()){await notify.sendNotify($.name, notifyBody );}
+    }
 }
 
-
-///////////////////////测试区//////////////////////////////////////
-
-
-//////////////////////////////////////////////////////////////////
-
-async function cashorder(cash, money) {
-  if (cash == 1 && money.icon_amount > 10000) {
-    console.log(`开始申请票据...`)
-    await cashticket(); //申请票据
-    console.log(`开始申请提现1元...`)
-    await getcash1(cashticket);
-  } else if (cash == 5 && money.icon_amount > 48000){
-    console.log(`开始申请票据...`)
-    await cashticket(); //申请票据
-    console.log(`开始申请提现5元...`)
-    await getcash5(cashticket);
-  } else if (cash == 0 ){
-    console.log(`请到BOXJS设置,目前设置为0,不自动提现...`)
-    tz += `请到BOXJS设置,目前设置为0,不自动提现...\n`
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【自动提现】:账户提现余额不足🤦‍♀️\n`
-  }
-}
-async function task1() {
-  console.log(`开始验证【股票添加到自选】任务状态`)
-  await statuid2()
-  if (statuid2.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【股票添加到自选】任务`)
-    await taskid2(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【添加自选】:已执行\n`
-  }
-}
-async function wxtask1() {
-  console.log(`开始验证【WX股票添加到自选】任务状态`)
-  await wxstatuid2()
-  if (wxstatuid2.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX股票添加到自选】任务`)
-    await wxtaskid2(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX股票添加到自选】:已执行\n`
-  }
-
-}
-async function task2() {
-  console.log(`开始验证【阅读资讯】任务状态`)
-  await statuid1()
-  if (statuid1.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【阅读资讯】任务`)
-    await taskid1(ticket);
-  } else {
-    console.log(`准备执行下一个任务\n`)
-    tz += `【阅读资讯】:已执行\n`
-  }
-}
-async function wxtask2() {
-  console.log(`开始验证【WX阅读资讯】任务状态`)
-  await wxstatuid1()
-  if (wxstatuid1.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX阅读资讯】任务`)
-    await wxtaskid1(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX阅读资讯】:已执行\n`
-  }
-
-}
-async function task3() {
-  console.log(`开始验证【分享股票行情】任务状态`)
-  await statuid12()
-  if (statuid12.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【分享股票行情】任务`)
-    await taskid12(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【分享行情】:已执行\n`
-  }
-}
-async function wxtask3() {
-  console.log(`开始验证【WX分享股票行情】任务状态`)
-  await wxstatuid12()
-  if (wxstatuid12.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX分享股票行情】任务`)
-    await wxtaskid12(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX分享股票行情】:已执行\n`
-  }
-
-}
-async function task4() {
-  console.log(`开始验证【分享福利中心】任务状态`)
-  await statuid11()
-  if (statuid11.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【分享福利中心】任务`)
-    await taskid11(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【分享福利中心】:已执行\n`
-  }
-}
-async function wxtask4() {
-  console.log(`开始验证【WX分享福利中心】任务状态`)
-  await wxstatuid11()
-  if (wxstatuid11.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX分享福利中心】任务`)
-    await wxtaskid11(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX分享福利中心】:已执行\n`
-  }
-
-}
-async function task5() {
-  console.log(`开始验证【分享一篇资讯】任务状态`)
-  await statuid14()
-  if (statuid14.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【分享一篇资讯】任务`)
-    await taskid14(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【分享资讯】:已执行\n`
-  }
-}
-async function wxtask5() {
-  console.log(`开始验证【WX分享一篇资讯】任务状态`)
-  await wxstatuid14()
-  if (wxstatuid14.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX分享一篇资讯】任务`)
-    await wxtaskid14(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX分享一篇资讯】:已执行\n`
-  }
-
-}
-async function task6() {
-  console.log(`开始验证【分享一篇社区帖子】任务状态`)
-  await statuid15()
-  if (statuid15.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【分享一篇社区帖子】任务`)
-    await taskid15(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【分享帖子】:已执行\n`
-  }
-}
-async function wxtask6() {
-  console.log(`开始验证【WX分享一篇社区帖子】任务状态`)
-  await wxstatuid15()
-  if (wxstatuid15.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX分享一篇社区帖子】任务`)
-    await wxtaskid15(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX分享一篇社区帖子】:已执行\n`
-  }
-
-}
-async function task7() {
-  console.log(`开始验证【猜涨跌活动】任务状态`)
-  await statuid3()
-  if (statuid3.done == 0) {
-    console.log(`检查本次猜涨跌日期...`)
-    await guesstime()
-    console.log(`开始自动猜涨跌...`)
-    await guessop(guessdate)
-    await $.wait(5000); //等待5秒
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【猜涨跌分享】任务`)
-    await taskshare(ticket)
-    await $.wait(5000); //等待5秒
-    console.log(`执行【猜涨跌每日礼包】任务`)
-    await guessred()
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【完成猜涨跌】任务`)
-    await taskid3(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【猜涨跌活动】:已执行\n`
-  }
-}
-async function wxtask7() {
-  console.log(`开始验证【WX猜涨跌】任务状态`)
-  await wxstatuid3()
-  if (wxstatuid3.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX猜涨跌】任务`)
-    await wxtaskid3(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX猜涨跌】:已执行\n`
-  }
-
-}
-async function task8() {
-  console.log(`开始验证【点赞一条社区评论】任务状态`)
-  await statuid4()
-  if (statuid4.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【点赞一条社区评论】任务`)
-    await taskid4(ticket);
-  } else {
-    console.log(`准备执行下一个任务...\n`)
-    tz += `【点赞评论】:已执行\n`
-  }
-
-}
-async function wxtask8() {
-  console.log(`开始验证【WX点赞一条社区评论】任务状态`)
-  await wxstatuid4()
-  if (wxstatuid4.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX点赞一条社区评论】任务`)
-    await wxtaskid4(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX点赞一条社区评论】:已执行\n`
-  }
-
-}
-async function task9() {
-  console.log(`开始验证【模拟炒股交易一笔】任务状态`)
-  await statuid6()
-  if (statuid6.done == 0) {
-    console.log(`开始申请票据...`)
-    await taskticket(); //申请票据
-    console.log(`执行【模拟炒股交易一笔】任务`)
-    await taskid6(ticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【模拟炒股】:已执行\n`
-  }
-
-}
-async function wxtask9() {
-  console.log(`开始验证【WX模拟炒股交易一笔】任务状态`)
-  await wxstatuid6()
-  if (wxstatuid6.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX模拟炒股交易一笔】任务`)
-    await wxtaskid6(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX模拟炒股】:已执行\n`
-  }
-
-}
-async function wxtask10() {
-  console.log(`开始验证【WX浏览社区帖子】任务状态`)
-  await wxstatuid16()
-  if (wxstatuid16.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX浏览社区帖子】任务`)
-    await wxtaskid16(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX浏览社区帖子】:已执行\n`
-  }
-}
-async function wxtask11() {
-  console.log(`开始验证【WX专属红包🧧】任务状态`)
-  await wxstatuid10()
-  if (wxstatuid10.done == 0) {
-    console.log(`开始申请票据...`)
-    await wxtaskticket(); //申请票据
-    console.log(`执行【WX专属红包🧧】任务`)
-    await wxtaskid10(wxticket);
-  } else {
-    console.log(`准备执行下一个任务...`)
-    tz += `【WX专属红包🧧】:已执行\n`
-  }
+async function getRewrite()
+{
+    if($request.url.indexOf("activity_task_daily.fcgi?") > -1 ||
+       $request.url.indexOf("activity_task_continue.fcgi?") > -1) {
+        if($request.url.indexOf("openid=") > -1)
+        {
+            //APP包
+            $.setdata($request.url,'TxStockAppUrl')
+            $.log(`获取TxStockAppUrl成功: ${$request.url}\n`)
+            $.msg(`获取TxStockAppUrl成功: ${$request.url}\n`)
+            $.setdata(JSON.stringify($request.headers),'TxStockAppHeader')
+            $.log(`获取TxStockAppHeader成功: ${JSON.stringify($request.headers)}\n`)
+            $.msg(`获取TxStockAppHeader成功: ${JSON.stringify($request.headers)}\n`)
+        }
+        else
+        {
+            //微信包
+            $.setdata(JSON.stringify($request.headers),'TxStockWxHeader')
+            $.log(`获取TxStockWxHeader成功: ${JSON.stringify($request.headers)}\n`)
+            $.msg(`获取TxStockAppHeader成功: ${JSON.stringify($request.headers)}\n`)
+        }
+    }
 }
 
-//////////////////////////////////////////////////////////////////
+async function checkEnv()
+{
+    if($.isNode())
+    {
+        TxStockAppUrl = process.env.TxStockAppUrl
+        TxStockAppHeader = process.env.TxStockAppHeader
+        TxStockWxHeader = process.env.TxStockWxHeader
+    }
+    else
+    {
+        TxStockAppUrl = $.getdata('TxStockAppUrl')
+        TxStockAppHeader = $.getdata('TxStockAppHeader')
+        TxStockWxHeader = $.getdata('TxStockWxHeader')
+    }
+    
+    if(!TxStockAppUrl || !TxStockAppHeader || !TxStockWxHeader)
+    {
+        str1 = TxStockAppUrl ? "" : "TxStockAppUrl"
+        str2 = TxStockAppHeader ? "" : "TxStockAppHeader"
+        str3 = TxStockWxHeader ? "" : "TxStockWxHeader"
+        $.log(`未找到环境变量: ${str1} ${str2} ${str3}\n`)
+        return false
+    }
+    
+    if (TxStockAppUrl.indexOf('#') > -1) {
+        appUrlArrs = TxStockAppUrl.split('#');
+        console.log(`您选择的是用"#"隔开TxStockAppUrl\n`)
+    } else if (TxStockAppUrl.indexOf('\n') > -1) {
+        appUrlArrs = TxStockAppUrl.split('\n');
+        console.log(`您选择的是用"\\n"隔开TxStockAppUrl\n`)
+    } else {
+        appUrlArrs = [TxStockAppUrl]
+    };
+    Object.keys(appUrlArrs).forEach((item) => {
+        if (appUrlArrs[item]) {
+            appUrlArr.push(appUrlArrs[item])
+        }
+    })
+    
+    if (TxStockAppHeader.indexOf('#') > -1) {
+        appHeaderArrs = TxStockAppHeader.split('#');
+        console.log(`您选择的是用"#"隔开TxStockAppHeader\n`)
+    } else if (TxStockAppHeader.indexOf('\n') > -1) {
+        appHeaderArrs = TxStockAppHeader.split('\n');
+        console.log(`您选择的是用"\\n"隔开TxStockAppHeader\n`)
+    } else {
+        appHeaderArrs = [TxStockAppHeader]
+    };
+    Object.keys(appHeaderArrs).forEach((item) => {
+        if (appHeaderArrs[item]) {
+            appHeaderArr.push(appHeaderArrs[item])
+        }
+    })
+
+    if (TxStockWxHeader.indexOf('#') > -1) {
+        wxHeaderArrs = TxStockWxHeader.split('#');
+        console.log(`您选择的是用"#"隔开TxStockWxHeader\n`)
+    } else if (TxStockWxHeader.indexOf('\n') > -1) {
+        wxHeaderArrs = TxStockWxHeader.split('\n');
+        console.log(`您选择的是用"\\n"隔开TxStockWxHeader\n`)
+    } else {
+        wxHeaderArrs = [TxStockWxHeader]
+    };
+    Object.keys(wxHeaderArrs).forEach((item) => {
+        if (wxHeaderArrs[item]) {
+            wxHeaderArr.push(wxHeaderArrs[item])
+        }
+    })
+    
+    if(helpOrder) {
+        if (helpOrder.indexOf('#') > -1) {
+            helpOrderArrs = helpOrder.split('#');
+            console.log(`您选择的是用"#"隔开TxStockHelpOrder\n`)
+        } else if (helpOrder.indexOf('@') > -1) {
+            helpOrderArrs = helpOrder.split('@');
+            console.log(`您选择的是用"@"隔开TxStockHelpOrder\n`)
+        } else {
+            helpOrderArrs = [helpOrder]
+        };
+        Object.keys(helpOrderArrs).forEach((item) => {
+            if (helpOrderArrs[item]) {
+                helpOrderArr.push(helpOrderArrs[item])
+            }
+        })
+    }
+    
+    totalUser = appUrlArr.length
+    shareFlag = (help && totalUser > 1)
+    $.log(`共找到${totalUser}个用户\n`)
+    
+    return true
+}
+
+async function getEnvParam(userNum)
+{
+    appUrlArrVal = appUrlArr[userNum];
+    appHeaderArrVal = JSON.parse(appHeaderArr[userNum]);
+    wxHeaderArrVal = JSON.parse(wxHeaderArr[userNum]);
+    
+    app_openid = appUrlArrVal.match(/&openid=([\w-]+)/)[1]
+    app_fskey = appUrlArrVal.match(/&fskey=([\w-]+)/)[1]
+    app_token = appUrlArrVal.match(/&access_token=([\w-]+)/)[1]
+    app_appName = appUrlArrVal.match(/&_appName=([\w\.,-]+)/)[1]
+    app_appver = appUrlArrVal.match(/&_appver=([\w\.,-]+)/)[1]
+    app_osVer = appUrlArrVal.match(/&_osVer=([\w\.,-]+)/)[1]
+    app_devId = appUrlArrVal.match(/&_devId=([\w-]+)/)[1]
+    
+    app_ck = ""
+    app_UA = ""
+    Object.keys(appHeaderArrVal).forEach((item) => {
+        if(item.toLowerCase() == "cookie") {
+            app_ck = appHeaderArrVal[item]
+        } else if(item.toLowerCase() == "user-agent") {
+            app_UA = appHeaderArrVal[item]
+        }
+    })
+    app_ck = appHeaderArrVal["Cookie"]
+    app_UA = appHeaderArrVal["User-Agent"]
+    
+    wx_ck_tmp = ""
+    wx_UA = ""
+    Object.keys(wxHeaderArrVal).forEach((item) => {
+        if(item.toLowerCase() == "cookie") {
+            wx_ck_tmp = wxHeaderArrVal[item]
+        } else if(item.toLowerCase() == "user-agent") {
+            wx_UA = wxHeaderArrVal[item]
+        }
+    })
+    
+    pgv_info = wx_ck_tmp.match(/pgv_info=([\w=]+)/)[1]
+    pgv_pvid = wx_ck_tmp.match(/pgv_pvid=([\w]+)/)[1]
+    ts_last = wx_ck_tmp.match(/ts_last=([\w\/]+)/)[1]
+    ts_refer = wx_ck_tmp.match(/ts_refer=([\w\/\.]+)/)[1]
+    ts_sid = wx_ck_tmp.match(/ts_sid=([\w]+)/)[1]
+    ts_uid = wx_ck_tmp.match(/ts_uid=([\w]+)/)[1]
+    qlappid = wx_ck_tmp.match(/qlappid=([\w]+)/)[1]
+    qlskey = wx_ck_tmp.match(/qlskey=([\w]+)/)[1]
+    qluin = wx_ck_tmp.match(/qluin=([\w@\.]+)/)[1]
+    qq_logtype = wx_ck_tmp.match(/qq_logtype=([\w]+)/)[1]
+    wzq_qlappid = wx_ck_tmp.match(/wzq_qlappid=([\w]+)/)[1]
+    wzq_qlskey = wx_ck_tmp.match(/wzq_qlskey=([\w]+)/)[1]
+    wzq_qluin = wx_ck_tmp.match(/wzq_qluin=([\w-]+)/)[1]
+    zxg_openid = wx_ck_tmp.match(/zxg_openid=([\w-]+)/)[1]
+    
+    //wx_ck = `pgv_info=${pgv_info}; pgv_pvid=${pgv_pvid}; ts_last=${ts_last}; ts_refer=${ts_refer}; ts_sid=${ts_sid}; ts_uid=${ts_uid}; qlappid=${qlappid}; qlskey=${qlskey}; qluin=${qluin}; qq_logtype=${qq_logtype}; wx_session_time=${sessionTime}; wzq_qlappid=${wzq_qlappid}; wzq_qlskey=${wzq_qlskey}; wzq_qluin=${wzq_qluin}; zxg_openid=${zxg_openid}`
+    
+    wx_ck = `pgv_info=${pgv_info}; pgv_pvid=${pgv_pvid}; ts_last=${ts_last}; ts_refer=${ts_refer}; ts_sid=${ts_sid}; ts_uid=${ts_uid}; qlappid=${qlappid}; qlskey=${qlskey}; qluin=${qluin}; qq_logtype=${qq_logtype}; wzq_qlappid=${wzq_qlappid}; wzq_qlskey=${wzq_qlskey}; wzq_qluin=${wzq_qluin}; zxg_openid=${zxg_openid}`
+}
+
+async function initAccountInfo()
+{
+    for (numUser = 0; numUser < totalUser; numUser++)
+    {
+        await getEnvParam(numUser)
+        
+        coinInfo = ""
+        await orderQuery(1,1,0,0); //获取用户名
+        coinStart.push(coinInfo)
+        await $.wait(500)
+    }
+}
+
+async function initTaskList() 
+{
+    $.log(`开始初始化任务列表\n`)
+    let taskItem = {}
+    
+    for(let i=0; i<appActidArray["newbie"].length; i++){
+        taskItem = {"taskName":"APP新手任务","activity":"task_continue","type":"app_new_user","actid":appActidArray["newbie"][i]}
+        appTaskArray["newbie"].push(taskItem)
+    }
+    
+    for(let i=0; i<appActidArray["daily"].length; i++){
+        taskItem = {"taskName":"APP日常任务","activity":"task_daily","type":"routine","actid":appActidArray["daily"][i]}
+        appTaskArray["daily"].push(taskItem)
+    }
+    
+    for(let i=0; i<wxActidArray["newbie"].length; i++){
+        taskItem = {"taskName":"微信新手任务","activity":"task_continue","type":"wzq_welfare_growth","actid":wxActidArray["newbie"][i]}
+        wxTaskArray["newbie"].push(taskItem)
+    }
+    
+    for(let i=0; i<wxActidArray["daily"].length; i++){
+        taskItem = {"taskName":"微信日常任务","activity":"task_daily","type":"routine","actid":wxActidArray["daily"][i]}
+        wxTaskArray["daily"].push(taskItem)
+    }
+}
+
+async function bullTask() 
+{
+    if(bullishFlag == 1) {
+        await bullStatus()
+        if(bullStatusFlag) {
+            await bullTaskDone(bullTaskArray["rock_bullish"])
+            for(let i=0; i<10; i++){
+                await bullTaskDone(bullTaskArray["open_box"])
+                await $.wait(5000)
+            }
+            await bullTaskDone(bullTaskArray["open_blindbox"])
+            await bullTaskDone(bullTaskArray["query_blindbox"])
+            await bullTaskDone(bullTaskArray["feed"])
+        }
+    }
+}
+
+async function dailyTask() 
+{
+    //APP端任务
+    if(appTaskFlag == 1) {
+        for(let i=0; i<appTaskArray["daily"].length; i++)
+        {
+            await appTaskList(appTaskArray["daily"][i]);
+        }
+    }
+    
+    //微信端任务
+    if(wxTaskFlag == 1) {
+        for(let i=0; i<wxTaskArray["daily"].length; i++)
+        {
+            await wxTaskList(wxTaskArray["daily"][i]);
+        }
+    }
+}
+
+async function newbieTask() 
+{
+    if(newbie == 1) {
+        $.log(`\================= 开始新手任务 =================\n`)
+        for (numUser = 0; numUser < totalUser; numUser++)
+        {
+            await getEnvParam(numUser)
+            
+            $.log(`\开始用户 ${nickname[numUser]} 新手任务：\n`)
+            for(let j=0; j<userAppShareTaskList["newbie"].length; j++)
+            {
+                await appShareTaskReq(userAppShareTaskList["newbie"][j],"newbie")
+            }
+            
+            for(let j=0; j<userWxShareTaskList["newbie"].length; j++)
+            {
+                await wxShareTaskReq(userWxShareTaskList["newbie"][j],"newbie")
+            }
+        }
+        
+        for (numUser = 0; numUser < totalUser; numUser++)
+        {
+            await getEnvParam(numUser)
+            await getHelpUser()
+            
+            for(let j=0; j<userAppShareTaskList["newbie"].length; j++)
+            {
+                shareTaskName = userAppShareTaskList["newbie"][j]
+                if(userAppShareCodeArr["newbie"][shareTaskName]) {
+                    await wxShareTaskDone(shareTaskName,userAppShareCodeArr["newbie"][shareTaskName][helpUser])
+                }
+            }
+            
+            for(let j=0; j<userWxShareTaskList["newbie"].length; j++)
+            {
+                shareTaskName = userWxShareTaskList["newbie"][j]
+                if(userWxShareCodeArr["newbie"][shareTaskName]) {
+                    await wxShareTaskDone(shareTaskName,userWxShareCodeArr["newbie"][shareTaskName][helpUser])
+                }
+            }
+        }
+        
+        for (numUser = 0; numUser < totalUser; numUser++)
+        {
+            await getEnvParam(numUser)
+            
+            for(let i=0; i<appTaskArray["newbie"].length; i++)
+            {
+                await appTaskList(appTaskArray["newbie"][i]);
+            }
+        }
+        $.log(`\================= 结束新手任务 =================\n`)
+    }
+}
+
+async function queryShareCode() 
+{
+    if(shareFlag == 1) {
+        $.log(`\n开始获取用户 ${nickname[numUser]} 日常任务互助码：\n`)
+        
+        if(appShareFlag == 1) {
+            for(let j=0; j<userAppShareTaskList["daily"].length; j++)
+            {
+                await appShareTaskReq(userAppShareTaskList["daily"][j],"daily")
+            }
+        }
+        
+        if(wxShareFlag == 1) {
+            for(let j=0; j<userWxShareTaskList["daily"].length; j++)
+            {
+                await wxShareTaskReq(userWxShareTaskList["daily"][j],"daily")
+            }
+        }
+    }
+}
+
+async function getHelpUser()
+{
+    if(helpOrderArr[numUser] || helpOrderArr[numUser] == 0) {
+        helpUser = helpOrderArr[numUser] - 1
+    } else {
+        //循环帮助
+        helpUser = ((numUser-1) <0) ?  (totalUser-1) : (numUser-1)
+    }
+}
+
+async function shareTask() 
+{
+    if(shareFlag == 1) {
+        $.log(`\n================= 开始分享任务 =================\n`)
+        for (numUser = 0; numUser < totalUser; numUser++)
+        {
+            await getEnvParam(numUser)
+            await getHelpUser()
+            
+            if(helpUser >= 0) {
+                $.log(`\n======= 用户${numUser+1} ${nickname[numUser]} 开始帮助 用户${helpUser+1} ${nickname[helpUser]} =======\n`)
+                        
+                //长牛互助，同一用户只能相互助力3次，默认不跑
+                if(bullHelpFlag == 1) {
+                    if(userAppShareCodeArr["bull_invite"][helpUser]&& userAppShareCodeArr["bull_help"][helpUser])
+                    {
+                        await bullInvite(userAppShareCodeArr["bull_invite"][helpUser],userAppShareCodeArr["bull_help"][helpUser])
+                    }
+                }
+                
+                //猜涨跌分享
+                if(userAppShareCodeArr["guess_invite"][helpUser] && userAppShareCodeArr["guess_ticket"][helpUser] && userAppShareCodeArr["guess_time"][helpUser])
+                {
+                    await wxGuessHelp(userAppShareCodeArr["guess_invite"][helpUser],userAppShareCodeArr["guess_ticket"][helpUser],userAppShareCodeArr["guess_time"][helpUser]);
+                }
+                
+                //APP助力任务
+                if(appShareFlag == 1) {
+                    for(let j=0; j<userAppShareTaskList["daily"].length; j++)
+                    {
+                        shareTaskName = userAppShareTaskList["daily"][j]
+                        if(userAppShareCodeArr["daily"][shareTaskName] && userAppShareCodeArr["daily"][shareTaskName][helpUser]) {
+                            await wxShareTaskDone(shareTaskName,userAppShareCodeArr["daily"][shareTaskName][helpUser])
+                        }
+                    }
+                }
+                
+                //微信助力任务
+                if(wxShareFlag == 1) {
+                    for(let j=0; j<userWxShareTaskList["daily"].length; j++)
+                    {
+                        shareTaskName = userWxShareTaskList["daily"][j]
+                        if(userWxShareCodeArr["daily"][shareTaskName] && userWxShareCodeArr["daily"][shareTaskName][helpUser]) {
+                            await wxShareTaskDone(shareTaskName,userWxShareCodeArr["daily"][shareTaskName][helpUser])
+                        }
+                    }
+                }
+                
+                $.log(`\n======= 用户 ${nickname[numUser]} 结束助力 =======\n`)
+            }
+        }
+        $.log(`\n================= 结束分享任务 =================\n`)
+    }
+}
+
+async function todayIncome()
+{
+    for (numUser = 0; numUser < totalUser; numUser++)
+    {
+        await getEnvParam(numUser)
+        
+        coinInfo = ""
+        await orderQuery(0,1,1,1)
+        coinEnd.push(coinInfo)
+        
+        if(coinEnd[numUser] && coinStart[numUser])
+        {
+            rewardCoin = coinEnd[numUser] - coinStart[numUser];
+            $.log(`用户：${nickname[numUser]}，本次运行获得${rewardCoin}金币\n\n`)
+            notifyStr += `用户：${nickname[numUser]}，本次运行获得${rewardCoin}金币\n\n`
+        }
+        
+        await $.wait(200)
+    }
+}
+
+//扫描可查询的APP任务列表
+async function scanAppTaskList(actidStart,actidEnd,activity,type) {
+    console.log(`开始查询APP任务列表, activity=${activity}, type=${type}, from ${actidStart} to ${actidEnd}`)
+    for(let i=actidStart; i<actidEnd; i++){
+        titem = {"taskName":`扫描任务${i}`,"activity":activity,"type":type,"actid":i}
+        await appTaskListQuery(titem);
+        await $.wait(100)
+    }
+    console.log(`查询结束，得到列表：`)
+    console.log(scanList)
+}
+
+//扫描可查询的微信任务列表
+async function scanWxTaskList(actidStart,actidEnd,activity,type) {
+    console.log(`开始查询微信任务列表, activity=${activity}, type=${type}, from ${actidStart} to ${actidEnd}`)
+    for(let i=actidStart; i<actidEnd; i++){
+        titem = {"taskName":`扫描任务${i}`,"activity":activity,"type":type,"actid":i}
+        await wxTaskListQuery(titem);
+        await $.wait(20)
+    }
+    console.log(`查询结束，得到列表：`)
+    console.log(scanList)
+}
+
+///////////////////////////////////////////////////////////////////
+//签到信息查询
+//signType -- 0: 签到, 1: 连续签到奖励
+async function signStatus(actid,signType) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let signurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_sign_task.fcgi?actid=${actid}&channel=1&type=welfare_sign&action=home&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(signurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result);
+                        if (result.retcode == 0) {
+                            if(!result.forbidden_code) {
+                                if(signType == 0){
+                                    for(let i=0; i<result.task_pkg.tasks.length; i++){
+                                        resultItem = result.task_pkg.tasks[i]
+                                        if(resultItem.date == todayDate){
+                                            if(resultItem.status == 0){
+                                                //今天未签到，去签到
+                                                await $.wait(200);
+                                                await signtask(actid);
+                                            } else {
+                                                //今天已签到
+                                                $.log(`用户 ${nickname[numUser]} 今天已签到\n`);
+                                            }
+                                        }
+                                    }
+                                } else if(signType == 1) {
+                                    $.log(`用户 ${nickname[numUser]} 已连续签到${result.task_pkg.continue_sign_days}天，总签到天数${result.task_pkg.total_sign_days}天\n`);
+                                    if(result.lotto_chance == 1 && result.lotto_ticket) {
+                                        await $.wait(200);
+                                        await sign7daysAward(actid,result.lotto_ticket);
+                                    }
+                                }
+                            } else {
+                                console.log(`用户 ${nickname[numUser]} 查询签到信息失败，可能已黑号：${result.forbidden_reason}\n`)
+                            }
+                        } else {
+                            console.log(`用户 ${nickname[numUser]} 查询签到信息失败：${result.retmsg}`)
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
 //签到
-async function signtask() {
-  return new Promise((resolve) => {
-    let signurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_sign_task.fcgi?actid=2002&action=signdone&date=${signday}&_=${rndtime}&openid=${signheaderVal}`,
-      //body: ``,
-      headers: {
-        //'Cookie': `${taskkeyVal}`,
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(signurl, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            //问题
-            $.log(data)
-            data = JSON.parse(data);
-            if (data.retcode == 51091020 || data.retcode == 51076001) {
-              $.log(`【签到】:${data.retmsg}\n`);
-              tz += `【签到】:${data.retmsg}\n`
-            } else {
-              $.log(`【签到】:获得${data.amount}金币`);
-              $.log(`【签到时间】:` + time(rndtime));
-              tz += `【签到】:获得${data.amount}金币\n`
-              await $.wait(5000); //等待5秒
+async function signtask(actid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let signurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_sign_task.fcgi?actid=${actid}&channel=1&action=signdone&date=${todayDate}&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(signurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if (result.retcode == 0) {
+                            $.log(`签到获得 ${result.reward_desc}\n`);
+                            $.log(`签到时间:${time(rndtime)}\n`);
+                            await $.wait(5000); //等待5秒
+                        } else {
+                            $.log(`签到失败：${result.retmsg}`)
+                        }
+                        await signStatus(actid,1)
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
             }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+        });
     });
-  });
 }
-//猜涨跌时间
-function guesstime() {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://zqact.tenpay.com/cgi-bin/guess_home.fcgi?channel=1&source=2&new_version=2&_=${rndtime}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            guessnum = (data.T_info[0].T_endts)*1000
-            nextguessnum = (data.T_info[0].next_T)*1000
-            $.log(`本次猜涨跌日期：`+ formatDateTime(guessnum));
-            $.log(`下次猜涨跌日期：`+ formatDateTime(nextguessnum));
-            guessdate = formatDateTime(guessnum);
 
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+//连续签到奖励
+async function sign7daysAward(actid,lotto_ticket) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let signurl = {
+            url:  `https://wzq.tenpay.com/cgi-bin/activity_sign_task.fcgi?actid=${actid}&action=award&reward_ticket=${lotto_ticket}&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(signurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if (result.retcode == 0) {
+                            $.log(`获得连续签到奖励： ${result.reward_desc}\n`);
+                        } else {
+                            $.log(`领取连续签到奖励失败：${result.retmsg}`)
+                        }
+                        await $.wait(1000);
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
     });
-  });
 }
+
+//新手任务奖励
+async function appNewbieAward(actid,ticket) {
+    return new Promise((resolve, reject) => {
+        let testurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=award&channel=1&actid=${actid}&reward_ticket=${ticket}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `http://zixuanguapp.finance.qq.com`,
+                'Accept-Encoding': `gzip,deflate`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
+            },
+        }
+        $.get(testurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0){
+                            $.log(`获得新手任务[actid:${actid}]阶段奖励: ${result.reward_desc}\n`);
+                            await $.wait(1000); //等待10秒
+                        } else {
+                            $.log(`新手任务[actid:${actid}]阶段未完成：${result.retmsg}\n`);
+                            await $.wait(100);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//APP任务列表查询
+async function appTaskListQuery(taskItem) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_${taskItem.activity}.fcgi?action=home&type=${taskItem.type}&actid=${taskItem.actid}&channel=1&invite_code=&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if (result.retcode == 0) {
+                            if(result.task_pkg && result.task_pkg.length > 0){
+                                scanList.push(taskItem.actid)
+                                if(TEST_PRINT == 1) {
+                                    if(logDebug) console.log(result)
+                                    console.log(`===================== actid=${taskItem.actid} start ======================`)
+                                    for(let i=0; i<result.task_pkg[0].tasks.length; i++){
+                                        resultItem = result.task_pkg[0].tasks[i]
+                                        console.log(resultItem)
+                                    }
+                                }
+                            }
+                        } else {
+                            //console.log(`${taskItem.taskName}查询失败：${result.retmsg}`)
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//APP任务列表
+async function appTaskList(taskItem) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_${taskItem.activity}.fcgi?action=home&type=${taskItem.type}&actid=${taskItem.actid}&invite_code=&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if (result.retcode == 0) {
+                            if(result.task_pkg != null){
+                                let numPkg = result.task_pkg.length
+                                for(let i=0; i<numPkg; i++){
+                                    //console.log(result.task_pkg[i])
+                                    if(result.task_pkg[i].lotto_ticket) {
+                                        //可领取新手奖励
+                                        await appNewbieAward(taskItem.actid,result.task_pkg[i].lotto_ticket)
+                                        continue
+                                    }
+                                    if(result.task_pkg[i].reward_type > 0) {
+                                        //已领取过新手奖励
+                                        continue
+                                    }
+                                    if(result.task_pkg[i].tasks && result.task_pkg[i].tasks[0]) {
+                                        let numTask = result.task_pkg[i].tasks.length
+                                        for(let j=0; j<numTask; j++){
+                                            resultItem = result.task_pkg[i].tasks[j]
+                                            //console.log(resultItem)
+                                            task_id = resultItem.id
+                                            task_tid = resultItem.tid
+                                            await appTaskStatus(taskItem,task_id,task_tid);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log(`${taskItem.taskName}[actid=${taskItem.actid}]查询失败：${result.retmsg}`)
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//APP任务状态
+async function appTaskStatus(taskItem,task_id,task_tid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let testurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?id=${task_id}&tid=${task_tid}&actid=${taskItem.actid}&channel=1&action=taskstatus&_rndtime=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `http://zixuanguapp.finance.qq.com`,
+                'Accept-Encoding': `gzip,deflate`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
+            },
+        }
+        $.get(testurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0){
+                            if(result.done == 0) {
+                                await appTaskticket(taskItem,task_id,task_tid);
+                            } else {
+                                $.log(`${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]已完成\n`);
+                            }
+                        } else {
+                            $.log(`${taskItem.taskName}状态查询失败：${result.retmsg}\n`);
+                        } 
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//APP票据申请
+async function appTaskticket(taskItem,task_id,task_tid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let testurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskticket&channel=1&actid=${taskItem.actid}&_rndtime=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `http://zixuanguapp.finance.qq.com`,
+                'Accept-Encoding': `gzip,deflate`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
+            },
+        }
+        $.get(testurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0 && result.task_ticket){
+                            await appTaskDone(taskItem,result.task_ticket,task_id,task_tid);
+                        } else {
+                            $.log(`${taskItem.taskName}申请票据失败：${result.retmsg}\n`);
+                        } 
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//做APP任务
+async function appTaskDone(taskItem,ticket,task_id,task_tid) {
+    return new Promise((resolve, reject) => {
+        let testurl = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=${taskItem.actid}&id=${task_id}&tid=${task_tid}&task_ticket=${ticket}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `http://zixuanguapp.finance.qq.com`,
+                'Accept-Encoding': `gzip,deflate`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
+            },
+        }
+        $.get(testurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0){
+                            $.log(`完成${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]:获得 ${result.reward_desc}\n`);
+                            await $.wait(10000); //等待10秒
+                        } else {
+                            $.log(`${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]未完成：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//微信任务列表查询
+async function wxTaskListQuery(taskItem) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_${taskItem.activity}.fcgi?action=home&type=${taskItem.type}&actid=${taskItem.actid}&invite_code=&_=${rndtime}`,
+            headers: {
+                'Cookie': wx_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': wx_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if (result.retcode == 0) {
+                            if(result.task_pkg && result.task_pkg.length > 0){
+                                scanList.push(taskItem.actid)
+                                if(TEST_PRINT == 1) {
+                                    if(logDebug) console.log(result)
+                                    console.log(`===================== actid=${taskItem.actid} start ======================`)
+                                    for(let i=0; i<result.task_pkg[0].tasks.length; i++){
+                                        resultItem = result.task_pkg[0].tasks[i]
+                                        console.log(resultItem)
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log(`${taskItem.taskName}查询失败：${result.retmsg}`)
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//WX任务列表
+async function wxTaskList(taskItem) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_${taskItem.activity}.fcgi?action=home&type=${taskItem.type}&actid=${taskItem.actid}&invite_code=&_=${rndtime}`,
+            headers: {
+                'Cookie': wx_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': wx_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if (result.retcode == 0) {
+                            if(result.task_pkg && result.task_pkg[0]){
+                                let numPkg = result.task_pkg.length
+                                for(let i=0; i<numPkg; i++){
+                                    let numTask = result.task_pkg[i].tasks.length
+                                    for(let j=0; j<numTask; j++){
+                                        resultItem = result.task_pkg[i].tasks[j]
+                                        //console.log(resultItem)
+                                        task_id = resultItem.id
+                                        task_tid = resultItem.tid
+                                        await $.wait(100);
+                                        await wxTaskStatus(taskItem,task_id,task_tid);
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log(`${taskItem.taskName}查询失败：${result.retmsg}`)
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//WX任务状态查询
+async function wxTaskStatus(taskItem,task_id,task_tid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
+            body: `_h5ver=2.0.1&actid=${taskItem.actid}&id=${task_id}&tid=${task_tid}&action=taskstatus`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Origin': `https://wzq.tenpay.com`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `wzq.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.post(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0){
+                            if(result.done == 0) {
+                                await wxTaskticket(taskItem,task_id,task_tid);
+                            } else {
+                                $.log(`${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]已完成\n`);
+                            }
+                        } else {
+                            $.log(`${taskItem.taskName}状态查询失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//WX票据申请
+async function wxTaskticket(taskItem,task_id,task_tid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
+            body: `_h5ver=2.0.1&actid=${taskItem.actid}&action=taskticket`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Origin': `https://wzq.tenpay.com`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `wzq.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.post(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0 && result.task_ticket){
+                            await wxTaskDone(taskItem,result.task_ticket,task_id,task_tid);
+                        } else {
+                            $.log(`${taskItem.taskName}申请票据失败：${result.retmsg}\n`);
+                        } 
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//做WX任务
+async function wxTaskDone(taskItem,wxticket,task_id,task_tid) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
+            body: `_h5ver=2.0.1&actid=${taskItem.actid}&tid=${task_tid}&id=${task_id}&task_ticket=${wxticket}&action=taskdone`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Origin': `https://wzq.tenpay.com`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `wzq.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.post(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        await $.wait(100);
+                        if(result.retcode == 0){
+                            $.log(`完成${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]:获得 ${result.reward_desc}\n`);
+                            await $.wait(10000); //等待10秒
+                        } else {
+                            $.log(`${taskItem.taskName}[actid:${taskItem.actid},id:${task_id},tid:${task_tid}]未完成：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//提现查询
+async function orderQuery(getName,getCoinNum,isWithdraw,logCoin) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let testurl = {
+            url: `https://zqact03.tenpay.com/cgi-bin/shop.fcgi?action=home_v2&type=2&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact03.tenpay.com/activity/page/exchangeRights/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact03.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-CN,zh-Hans;q=0.9`
+            },
+        }
+        $.get(testurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0){
+                            if(getName == 1) {
+                                $.log(`获取用户${numUser+1}昵称成功：${result.shop_asset.nickname}\n`);
+                                nickname.push(result.shop_asset.nickname)
+                            }
+                            if(getCoinNum == 1) {
+                                coinInfo = result.shop_asset.amount
+                            }
+                            $.log(`用户 ${nickname[numUser]} 金币余额: ${result.shop_asset.amount}\n`);
+                            if(logCoin) {
+                                notifyStr += `用户 ${nickname[numUser]} 金币余额: ${result.shop_asset.amount}\n`
+                            }
+                            if(cash != 0 && isWithdraw == 1) {
+                                if(result.cash != null && result.cash.length > 0){
+                                    let cashStr = `${cash}元现金`
+                                    for(let k=0; k<result.cash.length; k++){
+                                        cashItem = result.cash[k]
+                                        //console.log(cashItem)
+                                        if(cashItem.item_desc == cashStr){
+                                            $.log(`提现${cashItem.item_desc}，需要${cashItem.coins}金币\n`);
+                                            if(result.shop_asset.amount-cashItem.coins >= 0){
+                                                $.log(`用户 ${nickname[numUser]} 金币余额多于${cashItem.coins}，开始提现${cashStr}\n`);
+                                                notifyStr += `用户 ${nickname[numUser]} 金币余额多于${cashItem.coins}，开始提现${cashStr}\n`
+                                                await cashTicket(cashItem.item_id)
+                                            } else {
+                                                $.log(`用户 ${nickname[numUser]} 金币余额不足，不进行提现\n`);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            $.log(`提现列表获取失败：${task.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
 //提现票据
-function cashticket() {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://zqact.tenpay.com/cgi-bin/shop.fcgi?action=order_ticket&channel=1&type=2&_=${rndtime}&openid=${cashheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`本次验证时间🕐：` + time(rndtime));
-            $.log(`本次验证票据🎫：${data.ticket}\n`);
-            cashticket = data.ticket
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+async function cashTicket(item_id) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://zqact03.tenpay.com/cgi-bin/shop.fcgi?action=order_ticket&type=2&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact03.tenpay.com/activity/page/exchangeRights/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact03.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-CN,zh-Hans;q=0.9`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(result.retcode == 0){
+                            await getcash(result.ticket,item_id)
+                        } else {
+                            $.log(`提现票据申请失败：${task.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
     });
-  });
 }
+
 //提现请求
-function getcash1(cashticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://zqact.tenpay.com/cgi-bin/shop.fcgi?action=order&type=2&channel=1&ticket=${cashticket}&item_id=202003102146152a9e8885&_=${rndtime}&openid=${cashheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【提现1元结果】:${data.retmsg}🎉`);
-            tz += `【提现1元结果】:${data.retmsg}🎉\n`
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+async function getcash(cashticketFb,item_id) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://zqact03.tenpay.com/cgi-bin/shop.fcgi?action=order&type=2&ticket=${cashticketFb}&item_id=${item_id}&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact03.tenpay.com/activity/page/exchangeRights/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact03.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-CN,zh-Hans;q=0.9`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0){
+                            $.log(`提现结果:${result.retmsg}`);
+                            notifyStr += `提现结果:${result.retmsg}\n`
+                            $.log(`查询剩余金额：\n`);
+                            await orderQuery(0,0,0,1)
+                        } else {
+                            $.log(`提现失败：${result.retmsg}\n`)
+                            notifyStr += `提现失败：${result.retmsg}\n`
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
     });
-  });
 }
-function getcash5(cashticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://zqact.tenpay.com/cgi-bin/shop.fcgi?action=order&type=2&channel=1&ticket=${cashticket}&item_id=202003102147152ecaa605&_=${rndtime}&openid=${cashheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【提现5元结果】:${data.retmsg}🎉`);
-            tz += `【提现5元结果】:${data.retmsg}🎉\n`
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+
+//APP长牛任务
+async function bullTaskDone(taskItem, extra="") {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let signurl = {
+            url: `https://zqact03.tenpay.com/cgi-bin/activity_year_party.fcgi?type=bullish&action=${taskItem.action}&actid=${taskItem.actid}${extra}&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact03.tenpay.com/activity/page/raisebull/`,
+                'Host': `zqact03.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Accept-Language': `zh-CN,zh-Hans;q=0.9`
+            },
+        };
+        $.get(signurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0) {
+                            if(result.forbidden_code > 0) {
+                                $.log(`结束${taskItem.taskName}：${result.forbidden_reason}\n`);
+                                if(logDebug) console.log(result)
+                            } else if(result.reward_info) {
+                                $.log(`${taskItem.taskName}获得: ${result.reward_info[0].reward_desc}\n`);
+                                await $.wait(Math.random()*2000+7000)
+                                await bullTaskDone(taskItem)
+                            } else if(result.award_desc) {
+                                $.log(`${taskItem.taskName}获得: ${result.award_desc}\n`);
+                                await $.wait(Math.random()*1000+2000)
+                                await bullTaskDone(taskItem,extra)
+                            } else if(result.skin_info) {
+                                $.log(`${taskItem.taskName}获得: ${result.skin_info.skin_desc}\n`);
+                                await $.wait(Math.random()*2000+3000)
+                                await bullTaskDone(taskItem)
+                            } else if(result.skin_list && result.skin_list[0]) {
+                                let numItem = result.skin_list.length
+                                for(let j=0; j<numItem; j++) {
+                                    let skinItem = result.skin_list[j]
+                                    if(skinItem.skin_num > 1) {
+                                        await bullTaskDone(bullTaskArray["sell_skin"],`&skin_type=${skinItem.skin_type}`)
+                                    }
+                                }
+                            } else if(result.feed_reward_info) {
+                                $.log(`${taskItem.taskName}获得: ${result.feed_reward_info.reward_desc}\n`);
+                                if(result.level_up_status == 1) {
+                                $.log(`长牛升级到等级${result.update_new_level}，获得: ${result.level_reward_info.reward_desc}\n`);
+                            }
+                                await $.wait(Math.random()*3000+6000)
+                                await bullTaskDone(taskItem)
+                            } else {
+                                console.log(result)
+                            } 
+                        } else {
+                        $.log(`${taskItem.taskName}失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
     });
-  });
 }
+
+//APP长牛状态+获取互助码
+async function bullStatus() {
+    bullStatusFlag = 0
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let signurl = {
+            url: `https://zqact03.tenpay.com/cgi-bin/activity_year_party.fcgi?invite_code=&help_code=&share_date=&type=bullish&action=home&actid=1105&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&channel=1&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `*/*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact03.tenpay.com/activity/page/raisebull/`,
+                'Host': `zqact03.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Accept-Language': `zh-CN,zh-Hans;q=0.9`
+            },
+        };
+        $.get(signurl, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0) {
+                            if(result.forbidden_code) {
+                                $.log(`用户 ${nickname[numUser]} 可能已黑号：${result.forbidden_reason}\n`);
+                            } else {
+                                if(bullHelpFlag == 1 && shareFlag == 1) {
+                                    userAppShareCodeArr["bull_invite"].push(result.invite_code)
+                                    userAppShareCodeArr["bull_help"].push(result.help_code)
+                                    $.log(`获取用户 ${nickname[numUser]} 的长牛互助码: invite_code=${result.invite_code}, help_code=${result.help_code}\n`);
+                                } else {
+                                    userAppShareCodeArr["bull_invite"].push("")
+                                    userAppShareCodeArr["bull_help"].push("")
+                                }
+                                bullStatusFlag = 1
+                                $.log(`长牛状态：\n`)
+                                $.log(`等级: ${result.bullish_info.level}\n`)
+                                $.log(`下一级需要经验: ${result.bullish_info.next_level_exp}\n`)
+                                $.log(`现有经验: ${result.bullish_info.exp_value}\n`)
+                                $.log(`现有牛气: ${result.bullish_info.bullish_value}\n`)
+                            }
+                        } else {
+                            $.log(`查询长牛状态失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//长牛互助邀请
+async function bullInvite(inviteCode="",helpCode="") {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://zqact03.tenpay.com/cgi-bin/activity_year_party.fcgi?invite_code=${inviteCode}&help_code=${helpCode}&share_date=${todayDate}&type=bullish&action=home&actid=1105&_=${rndtime}`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `zqact03.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://zqact03.tenpay.com/activity/page/raisebull/?inviteCode=${inviteCode}&helpCode=${helpCode}&date=${todayDate}`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0){
+                            await bullHelpReward(inviteCode,helpCode)
+                            await $.wait(1000)
+                        } else {
+                            $.log(`长牛互助邀请失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//长牛互助奖励
+async function bullHelpReward(inviteCode="",helpCode="") {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://zqact03.tenpay.com/cgi-bin/activity_year_party.fcgi?type=bullish&action=help&actid=1105&help_code=${helpCode}&share_date=${todayDate}&_=${rndtime}`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `zqact03.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://zqact03.tenpay.com/activity/page/raisebull/?inviteCode=${inviteCode}&helpCode=${helpCode}&date=${todayDate}&_=${rndtime}`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data)
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0){
+                            if(result.forbidden_code > 0){
+                                $.log(`长牛互助获取奖励失败：${result.forbidden_reason}\n`);
+                            } else {
+                                $.log(`长牛互助获得：${result.reward_info.reward_desc}\n`);
+                            }
+                        } else {
+                            $.log(`长牛互助获取奖励失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//分享任务-APP端发起
+async function appShareTaskReq(share_type,task_type) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity/activity_share.fcgi?channel=1&action=query_share_code&share_type=${share_type}&_rndtime=${rndtime}&_appName=${app_appName}&_dev=iPhone13,2&_devId=${app_devId}&_appver=${app_appver}&_ifChId=&_isChId=1&_osVer=${app_osVer}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&buildType=store&check=11&_idfa=&lang=zh_CN`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `wzq.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if(!userAppShareCodeArr[task_type][share_type]) {
+                    userAppShareCodeArr[task_type][share_type] = []
+                }
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0) {
+                            userAppShareCodeArr[task_type][share_type].push(result.share_code)
+                            $.log(`获取用户 ${nickname[numUser]} 的APP的${share_type}互助码: ${result.share_code}\n`);
+                        } else {
+                            $.log(`获取用户 ${nickname[numUser]} 的APP的${share_type}互助码失败：${result.retmsg}\n`);
+                            userAppShareCodeArr[task_type][share_type].push("")
+                        }
+                        await $.wait(1000)
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//分享任务-微信端发起
+async function wxShareTaskReq(share_type,task_type) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_share.fcgi?t=${rndtime}`,
+            body: `_h5ver=2.0.1&action=query_share_code&share_type=${share_type}`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Origin': `https://wzq.tenpay.com`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `wzq.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.post(url, async (err, resp, data) => {
+            try {
+                if(!userWxShareCodeArr[task_type][share_type]) {
+                    userWxShareCodeArr[task_type][share_type] = []
+                }
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        //console.log(data)
+                        if(result.retcode == 0) {
+                            userWxShareCodeArr[task_type][share_type].push(result.share_code)
+                            $.log(`获取用户 ${nickname[numUser]} 的微信的${share_type}互助码: ${result.share_code}\n`);
+                        } else {
+                            $.log(`获取用户 ${nickname[numUser]} 的微信的${share_type}互助码失败：${result.retmsg}\n`);
+                            userWxShareCodeArr[task_type][share_type].push("")
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//分享任务-微信端完成
+async function wxShareTaskDone(share_type,share_code) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://wzq.tenpay.com/cgi-bin/activity_share.fcgi?t=${rndtime}`,
+            body: `_h5ver=2.0.1&action=share_code_info&share_type=${share_type}&share_code=${share_code}`,
+            headers: {
+                'Accept': `application/json, text/plain, */*`,
+                'Origin': `https://wzq.tenpay.com`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `wzq.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://wzq.tenpay.com/mp/v2/index.html?__share_flag__=1`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.post(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        //console.log(data)
+                        if(result.retcode == 0) {
+                            if(result.share_code_info && result.share_code_info.status == 1) {
+                                $.log(`${share_type}互助成功：对方昵称 ${result.share_code_info.nickname}\n`);
+                            } else if(result.retmsg == "OK") {
+                                $.log(`${share_type}已经互助过了\n`);
+                            } else {
+                                console.log(result)
+                            }
+                            await $.wait(1000)
+                        } else {
+                            $.log(`${share_type}互助失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//猜涨跌互助
+async function wxGuessHelp(invite_code="",invite_ticket="",invite_time="") {
+    let guessTicket = encodeURI(invite_ticket)
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve, reject) => {
+        let url = {
+            url: `https://zqact.tenpay.com/cgi-bin/guess_home.fcgi?channel=0&source=2&new_version=2&invite_code=${invite_code}&invite_time=${invite_time}&invite_ticket=${guessTicket}&_=${rndtime}`,
+            headers: {
+                'Accept': `*/*`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Cookie': wx_ck,
+                'Content-Type': `application/x-www-form-urlencoded`,
+                'Host': `zqact.tenpay.com`,
+                'Connection': `keep-alive`,
+                'User-Agent': wx_UA,
+                'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        //console.log(data)
+                        if(result.retcode == 0) {
+                            $.log(`猜涨跌互助成功\n`);
+                        } else {
+                            $.log(`猜涨跌互助失败：${result.retmsg}\n`);
+                        }
+                        await $.wait(1000)
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        })
+    })
+}
+
+//猜涨跌状态，获取互助码
+async function appGuessStatus() {
+    curTime = new Date()
+    rndtime = Math.round(curTime.getTime())
+    currentHour = curTime.getHours()
+    let isGuessTime = ((currentHour < 13) && (currentHour > 9)) ? 1 : 0
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://zqact.tenpay.com/cgi-bin/guess_home.fcgi?channel=1&source=2&new_version=2&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0) {
+                            await $.wait(1000)
+                            if(result.notice_info && result.notice_info[0]) {
+                                if(logDebug) console.log(result)
+                                if(result.notice_info[0].answer_status == 1) {
+                                    $.log(`上期猜涨跌回答正确，正在取得奖励\n`);
+                                    await appGuessAward(result.notice_info[0].date)
+                                } else {
+                                    $.log(`上期猜涨跌回答错误\n`);
+                                }
+                                await $.wait(1000)
+                            }
+                            if(isGuessTime) {
+                                if((result.T_info && result.T_info[0] && result.T_info[0].user_answer == 0) || 
+                                   (result.T1_info && result.T1_info[0] && result.T1_info[0].user_answer == 0)) {
+                                    let guessOption = 1
+                                    if(result.stockinfo && result.stockinfo[0]) {
+                                        guessOption = (result.stockinfo[0].zdf.indexOf('-') > -1) ? 2 : 1
+                                        let guessStr = (guessOption == 2) ? "跌" : "涨"
+                                        $.log(`当前上证指数涨幅为${result.stockinfo[0].zdf}%，为你猜${guessStr}\n`);
+                                    } else {
+                                        $.log(`未获取到上证指数状态，默认为你猜涨\n`);
+                                    }
+                                    if(result.date_list) {
+                                        for(let i=0; i<result.date_list.length; i++) {
+                                            let guessItem = result.date_list[i]
+                                            if(guessItem.status == 3 && guessItem.date == todayDate) {
+                                                await appGuessRiseFall(guessOption,guessItem.date)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    $.log(`已竞猜当期涨跌\n`);
+                                }
+                            } else {
+                                $.log(`脚本只会在10点到13点之间进行竞猜，当前为非竞猜时段\n`);
+                            }
+                            if(result.invite_info && result.invite_info.invite_code && result.invite_info.invite_ticket && result.invite_info.invite_time) {
+                                userAppShareCodeArr["guess_invite"].push(result.invite_info.invite_code)
+                                userAppShareCodeArr["guess_ticket"].push(result.invite_info.invite_ticket)
+                                userAppShareCodeArr["guess_time"].push(result.invite_info.invite_time)
+                                $.log(`获取用户 ${nickname[numUser]} 的猜涨跌互助码：${result.invite_info.invite_code}\n`);
+                                $.log(`获取用户 ${nickname[numUser]} 的猜涨跌票据：${result.invite_info.invite_ticket}\n`);
+                            } else {
+                                $.log(`获取用户 ${nickname[numUser]} 的猜涨跌互助码失败\n`);
+                                userAppShareCodeArr["guess_invite"].push("")
+                                userAppShareCodeArr["guess_ticket"].push("")
+                                userAppShareCodeArr["guess_time"].push("")
+                            }
+                        } else {
+                            $.log(`获取用户 ${nickname[numUser]} 的猜涨跌状态失败：${result.retmsg}\n`);
+                        }
+                        await $.wait(1000)
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
+//猜涨跌奖励
+async function appGuessAward(guessDate) {
+    rndtime = Math.round(curTime.getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://zqact.tenpay.com/cgi-bin/activity.fcgi?channel=1&activity=guess_new&guess_act_id=3&guess_date=${guessDate}&guess_reward_type=1&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        if(result.retcode == 0) {
+                            $.log(`获得猜涨跌奖励：${result.reward_memo} ${result.reward_value}金币\n`);
+                        } else {
+                            $.log(`获得猜涨跌奖励失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
+            }
+        });
+    });
+}
+
 //猜涨跌
-function guessop(guessdate) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://zqact.tenpay.com/cgi-bin/guess_op.fcgi?action=2&act_id=3&user_answer=1&date=${guessdate}&channel=1&_=${rndtime}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if (data.retcode == 0) {
-              $.log(`【自动猜涨跌】:成功🎉\n`);
-              tz += `【自动猜涨跌】:成功🎉\n`
-            } else {
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-              tz += `【自动猜涨跌】:${data.retmsg}\n`
+async function appGuessRiseFall(answer,guessDate) {
+    rndtime = Math.round(new Date().getTime())
+    return new Promise((resolve) => {
+        let url = {
+            url: `https://zqact.tenpay.com/cgi-bin/guess_op.fcgi?action=2&act_id=3&user_answer=${answer}&date=${guessDate}&channel=1&_=${rndtime}&openid=${app_openid}&fskey=${app_fskey}&access_token=${app_token}&_appName=${app_appName}&_appver=${app_appver}&_osVer=${app_osVer}&_devId=${app_devId}`,
+            headers: {
+                'Cookie': app_ck,
+                'Accept': `application/json, text/plain, */*`,
+                'Connection': `keep-alive`,
+                'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
+                'Accept-Encoding': `gzip, deflate, br`,
+                'Host': `zqact.tenpay.com`,
+                'User-Agent': app_UA,
+                'Accept-Language': `zh-cn`
+            },
+        };
+        $.get(url, async (err, resp, data) => {
+            try {
+                if (err) {
+                    console.log("腾讯自选股: API查询请求失败 ‼️‼️");
+                    console.log(JSON.stringify(err));
+                    $.logErr(err);
+                } else {
+                    if (safeGet(data)) {
+                        let result = JSON.parse(data);
+                        if(logDebug) console.log(result)
+                        guessStr = (answer==1) ? "猜涨" : "猜跌"
+                        if(result.retcode == 0) {
+                            $.log(`用户 ${nickname[numUser]} 猜涨跌成功：${guessStr}\n`);
+                        } else {
+                            $.log(`用户 ${nickname[numUser]} ${guessStr}失败：${result.retmsg}\n`);
+                        }
+                    }
+                }
+            } catch (e) {
+                $.logErr(e, resp);
+            } finally {
+                resolve();
             }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
+        });
     });
-  });
 }
-//猜涨跌每日礼包
-function guessred() {
-  return new Promise((resolve) => {
-    let guessredurl = {
-      url: `https://zqact.tenpay.com/cgi-bin/activity.fcgi?channel=1&activity=guess_new&guess_act_id=3&guess_date=${signday}&guess_reward_type=1&_=${rndtime}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://wzq.tenpay.com/activity/page/welwareCenter/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.get(guessredurl, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if (data.retcode == 0) {
-              $.log(`【猜涨跌每日礼包】:获得 ${data.reward_value}金币`);
-              tz += `【猜涨跌每日礼包】:获得 ${data.reward_value}金币\n`
-            } else {
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-              tz += `【猜涨跌每日礼包】:${data.retmsg}\n`
-            }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-//猜涨跌分享奖励
-function taskshare(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://zqact.tenpay.com/cgi-bin/activity_task.fcgi?actid=1103&tid=18&id=1&channel=1&task_ticket=${ticket}&action=taskdone&_=${rndtime}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `application/json, text/plain, */*`,
-        'Connection': `keep-alive`,
-        'Referer': `https://zqact.tenpay.com/activity/page/guessRiseFall/`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Host': `zqact.tenpay.com`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 qqstock/8.7.1`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-        data = JSON.parse(data)
-      if (data.retcode == 0) {
-        $.log(`【猜涨跌分享】:获得 ${data.reward_desc}\n`);
-        tz += `【猜涨跌分享】:获得 ${data.reward_desc}\n`
-        await $.wait(10000); //等待10秒
-      } else {
-        console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-        tz += `【猜涨跌分享】:${data.retmsg}\n`
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-//金币查询
-async function userhome() {
-  return new Promise((resolve) => {
-    let signurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_usercenter.fcgi?channel=1&g_openid=${userheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${userkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.1 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Accept-Language': `zh-Hans-CN;q=1`
-      },
-    };
-    $.get(signurl, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            money = JSON.parse(data);
-            //console.log(money);
-            $.log(`【账户金币】:${money.icon_amount}金币\n`);
-            tz += `【账户金币】:${money.icon_amount}金币\n`;
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-//添加股票到自选
-function taskid2(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=2&id=2&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【添加自选股】:获得 ${task.reward_desc}\n`);
-      tz += `【添加自选股】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      resolve()
-    })
-  })
-}
-function statuid2() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&tid=2&id=2&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      $.log('❗️❗️❗️statuid2: '+data)
-      statuid2 = JSON.parse(data)
-      if (statuid2.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-function wxtaskid2(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=2&id=2&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX添加自选股】:获得${data.reward_desc}`);
-            tz += `【WX添加自选股】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-function wxstatuid2() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=2&tid=2&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid2 = JSON.parse(data)
-      if (wxstatuid2.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-
-//阅读一篇资讯
-function taskid1(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=5&id=1&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      //$.log(`【阅读资讯】:`+data)
-      let task = JSON.parse(data)
-      $.log(`【阅读资讯】:获得 ${task.reward_desc}\n`);
-      tz += `【阅读资讯】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid1() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=1&tid=5&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid1 = JSON.parse(data)
-      if (statuid1.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid1(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=5&id=1&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX阅读资讯】:获得${data.reward_desc}`);
-            tz += `【WX阅读资讯】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid1() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=1&tid=5&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid1 = JSON.parse(data)
-      if (wxstatuid1.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//分享股票行情
-function taskid12(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=22&id=12&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      //$.log(`【分享行情】:`+data)
-      let task = JSON.parse(data)
-      $.log(`【分享行情】:获得 ${task.reward_desc}\n`);
-      tz += `【分享行情】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid12() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=12&tid=22&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid12 = JSON.parse(data)
-      if (statuid12.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid12(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=22&id=12&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if(data.retcode == 0){
-              $.log(`【WX分享行情】:获得${data.reward_desc}`);
-              tz += `【WX分享行情】:获得${data.reward_desc}\n`
-              await $.wait(5000); //等待5秒
-            }else{
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-              tz += `【WX分享行情】:${data.retmsg}\n`
-            }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid12() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=12&tid=22&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid12 = JSON.parse(data)
-      if (wxstatuid12.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//分享福利中心
-function taskid11(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=7&id=11&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【分享福利中心】:获得 ${task.reward_desc}\n`);
-      tz += `【分享福利中心】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid11() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=11&tid=7&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid11 = JSON.parse(data)
-      if (statuid11.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid11(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=7&id=11&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if(data.retcode == 0){
-              $.log(`【WX分享福利中心】:获得${data.reward_desc}`);
-              tz += `【WX分享福利中心】:获得${data.reward_desc}\n`
-              await $.wait(5000); //等待5秒
-            }else{
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-              tz += `【WX福利中心】:${data.retmsg}\n`
-            }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid11() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=11&tid=7&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid11 = JSON.parse(data)
-      if (wxstatuid11.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//分享一篇资讯
-function taskid14(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=28&id=14&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【分享资讯】:获得 ${task.reward_desc}\n`);
-      tz += `【分享资讯】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid14() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=14&tid=28&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid14 = JSON.parse(data)
-      if (statuid14.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid14(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=28&id=14&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if(data.retcode == 0){
-              $.log(`【WX分享资讯】:获得${data.reward_desc}`);
-              tz += `【WX分享资讯】:获得${data.reward_desc}\n`
-              await $.wait(5000); //等待5秒
-            }else{
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-              tz += `【WX分享资讯】:${data.retmsg}\n`
-            }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid14() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=14&tid=28&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid14 = JSON.parse(data)
-      if (wxstatuid14.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//分享一篇社区帖子
-function taskid15(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=29&id=15&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【分享社区帖子】:获得 ${task.reward_desc}\n`);
-      tz += `【分享社区帖子】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid15() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=15&tid=29&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid15 = JSON.parse(data)
-      if (statuid15.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid15(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=29&id=15&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            if(data.retcode == 0){
-              $.log(`【WX分享社区帖子】:获得${data.reward_desc}`);
-              tz += `【WX分享社区帖子】:获得${data.reward_desc}\n`
-              await $.wait(5000); //等待5秒
-            }else{
-              console.log(`任务完成失败，错误信息：${JSON.stringify(data)}\n`)
-              tz += `【WX分享社区帖子】:${data.retmsg}\n`
-            }
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid15() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=15&tid=29&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid15 = JSON.parse(data)
-      if (wxstatuid15.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//完成一次猜涨跌游戏
-function taskid3(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://zqact.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=9&id=3&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${signkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【猜涨跌】:获得 ${task.reward_desc}\n`);
-      tz += `【猜涨跌】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-
-function statuid3() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=3&tid=9&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid3 = JSON.parse(data)
-      if (statuid3.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid3(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=9&id=3&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX猜涨跌】:获得${data.reward_desc}`);
-            tz += `【WX猜涨跌】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid3() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=3&tid=9&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid3 = JSON.parse(data)
-      if (wxstatuid3.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//点赞
-function taskid4(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=4&id=4&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let task = JSON.parse(data)
-      $.log(`【点赞评论】:获得 ${task.reward_desc}\n`);
-      tz += `【点赞评论】:获得 ${task.reward_desc}\n`
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid4() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=4&tid=4&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid4 = JSON.parse(data)
-      if (statuid4.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid4(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=4&id=4&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX点赞评论】:获得${data.reward_desc}`);
-            tz += `【WX点赞评论】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid4() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=4&tid=4&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid4 = JSON.parse(data)
-      if (wxstatuid4.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//模拟炒股
-function taskid6(ticket) {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskdone&channel=1&actid=1101&tid=13&id=6&task_ticket=${ticket}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      //$.log(`【模拟炒股】:`+data)
-      let task = JSON.parse(data)
-      if (typeof(task.reward_desc) == 'undefined') {
-        $.log(`【模拟炒股】: ${task.retmsg}\n`);
-      tz += `【模拟炒股】: ${task.retmsg}\n`
-      } else {
-      $.log(`【模拟炒股】:获得 ${task.reward_desc}\n`);
-      tz += `【模拟炒股】:获得 ${task.reward_desc}\n`
-      }
-      await $.wait(10000); //等待10秒
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function statuid6() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskstatus&channel=1&actid=1101&id=6&tid=13&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      statuid6 = JSON.parse(data)
-      if (statuid6.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-
-function wxtaskid6(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=13&id=6&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX模拟炒股】:获得${data.reward_desc}`);
-            tz += `【WX模拟炒股】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid6() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=6&tid=13&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid6 = JSON.parse(data)
-      if (wxstatuid6.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//浏览社区帖子
-function wxtaskid16(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=31&id=16&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX浏览社区帖子】:获得${data.reward_desc}`);
-            tz += `【WX浏览社区帖子】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid16() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=16&tid=31&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid16 = JSON.parse(data)
-      if (wxstatuid16.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//WX专属红包🧧
-function wxtaskid10(wxticket) {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&tid=25&id=10&task_ticket=${wxticket}&action=taskdone`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`【WX专属红包🧧】:获得${data.reward_desc}`);
-            tz += `【WX专属红包🧧】:获得${data.reward_desc}\n`
-          } else {
-            console.log(`任务完成失败，错误信息：${JSON.stringify(data)}`)
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
-function wxstatuid10() {
-  return new Promise((resolve, reject) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&id=10&tid=25&action=taskstatus`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    }
-    $.post(url, async (error, resp, data) => {
-      if (logs == 1) $.log(data)
-      wxstatuid10 = JSON.parse(data)
-      if (wxstatuid10.done == 1) {
-        $.log(`验证状态失败,任务已执行🚫`);
-      } else {
-        $.log(`验证状态成功,可执行任务🎉`);
-      }
-      resolve()
-    })
-  })
-}
-//票据申请
-
-function taskticket() {
-  return new Promise((resolve, reject) => {
-    let testurl = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?action=taskticket&channel=1&actid=1101&_rndtime=${rndtime}&_appName=ios${taskheaderVal}`,
-      //body: ``,
-      headers: {
-        'Cookie': `${taskkeyVal}`,
-        'Accept': `*/*`,
-        'Connection': `keep-alive`,
-        'Referer': `http://zixuanguapp.finance.qq.com`,
-        'Accept-Encoding': `gzip,deflate`,
-        'Host': `wzq.tenpay.com`,
-        'User-Agent': `QQStock/8.7.0 (iPhone; iOS 14.1; Scale/2.00)`,
-        'Accept-Language': `zh-Hans-CN;q=1, en-CN;q=0.9`
-      },
-    }
-    $.get(testurl, async (error, resp, data) => {
-      try {
-       if (logs == 1) $.log(data)
-      let test2 = JSON.parse(data)
-      $.log(`本次验证时间🕐：` + time(rndtime));
-      $.log(`本次验证票据🎫：${test2.task_ticket}`);
-      ticket = test2.task_ticket
-      //tz += `【现金余额】：¥ ${task.data.activity_money.money}元\n`
-
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    })
-  })
-}
-function wxtaskticket() {
-  return new Promise((resolve) => {
-    let url = {
-      url: `https://wzq.tenpay.com/cgi-bin/activity_task.fcgi?t=${rndtime}`,
-      body: `_h5ver=2.0.1&actid=1100&action=taskticket`,
-      headers: {
-        'Accept': `application/json, text/plain, */*`,
-        'Origin': `https://wzq.tenpay.com`,
-        'Accept-Encoding': `gzip, deflate, br`,
-        'Cookie': `${wxtaskkeyVal}`,
-        'Content-Type': `application/x-www-form-urlencoded`,
-        'Host': `wzq.tenpay.com`,
-        'Connection': `keep-alive`,
-        'User-Agent': `Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/7.0.20(0x1700142b) NetType/4G Language/zh_CN`,
-        'Referer': `https://wzq.tenpay.com/mp/v2/index.html`,
-        'Accept-Language': `zh-cn`
-      },
-    };
-    $.post(url, async (err, resp, data) => {
-      try {
-        if (err) {
-          console.log("腾讯自选股: API查询请求失败 ‼️‼️");
-          console.log(JSON.stringify(err));
-          $.logErr(err);
-        } else {
-          if (safeGet(data)) {
-            if (logs == 1) $.log(data)
-            data = JSON.parse(data);
-            $.log(`本次验证时间🕐：` + time(rndtime));
-            $.log(`本次验证票据🎫：${data.task_ticket}`);
-            wxticket = data.task_ticket
-          }
-        }
-      } catch (e) {
-        $.logErr(e, resp);
-      } finally {
-        resolve();
-      }
-    });
-  });
-}
-
 ////////////////////////////////////////////////////////////////////
-function Jsname() {
-  $.log(`╭┉┉╮╭╮╭╮╭┉┉╮╭┉┉╮╭┉┉╮╭┉┉╮╭╮╭╮`)
-  $.log(`╰╮╭╯┋╰╯┋┋╭┉╯╰╮╭╯┋╭╮┋┋╭┉╯┋╰╯┋`)
-  $.log(` ┋┋ ╰╮╭╯┋╰┉╮ ┋┋ ┋┋┋┋┋┋  ┋ ╭╯`)
-  $.log(` ┋┋ ╭╯╰╮╰┉╮┋ ┋┋ ┋┋┋┋┋┋  ┋ ╰╮`)
-  $.log(` ┋┋ ┋╭╮┋╭┉╯┋ ┋┋ ┋╰╯┋┋╰┉╮┋╭╮┋`)
-  $.log(` ╰╯ ╰╯╰╯╰┉┉╯ ╰╯ ╰┉┉╯╰┉┉╯╰╯╰╯`)
-}
 
 function time(time) {
   var date = new Date(time + 8 * 3600 * 1000);
@@ -2551,6 +2171,10 @@ function safeGet(data) {
   }
 }
 
+function printCaller(){
+    return (new Error()).stack.split("\n")[2].trim().split(" ")[1]
+}
+
 function formatDateTime(inputTime) {
   var date = new Date(inputTime);
   var y = date.getFullYear();
@@ -2564,7 +2188,7 @@ function formatDateTime(inputTime) {
   var second = date.getSeconds();
   minute = minute < 10 ? ('0' + minute) : minute;
   second = second < 10 ? ('0' + second) : second;
-  return y + m + d;
+  return `${y}${m}${d}`;
 };
 
 function Env(t, e) {
